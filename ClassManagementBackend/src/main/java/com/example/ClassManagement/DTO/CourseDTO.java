@@ -4,7 +4,7 @@ import java.util.List;
 
 
 
-public class CourseDTO {
+public class CourseDTO{
 
 		int  cid;
 		String cname;
