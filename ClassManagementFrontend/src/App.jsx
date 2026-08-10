@@ -270,32 +270,39 @@ function App() {
   ) : (
     <div>
       <h2 className="section-header">Teacher Portal</h2>
-      <form
-        className="custom-form"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          marginBottom: "24px"
-        }}
-      >
-        <input
-          className="custom-input"
-          type="text"
-          name="cname"
-          placeholder="Course Name"
-          onChange={handleChangeCourse}
-          style={{ marginBottom: 0 }}
-        />
-        <button
-          type="button"
-          className="btn btn-success"
-          style={{ width: "auto", whiteSpace: "nowrap", padding: "10px 18px" }}
-          onClick={() => handleAddCourse(course, current.uid)}
-        >
-          Add Course
-        </button>
-      </form>
+     {/* Teacher Portal Form */}
+<form
+  className="custom-form"
+  onSubmit={(e) => e.preventDefault()}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "24px"
+  }}
+>
+  <input
+    className="custom-input"
+    type="text"
+    name="cname"
+    placeholder="Course Name"
+    value={course.cname} // 👈 हा बदल जोडला आहे (फॉर्म Clear होण्यासाठी)
+    onChange={handleChangeCourse}
+    style={{ marginBottom: 0 }}
+  />
+  <button
+    type="button"
+    className="btn btn-success"
+    style={{
+      width: "auto",
+      whiteSpace: "nowrap",
+      padding: "10px 18px"
+    }}
+    onClick={() => handleAddCourse(course, current.uid, setcourse)} // 👈 इथे setcourse पास केला आहे
+  >
+    Add Course
+  </button>
+</form>
 
       <button
         className="btn btn-primary"

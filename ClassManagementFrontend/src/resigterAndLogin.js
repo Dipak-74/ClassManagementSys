@@ -125,7 +125,7 @@ export const handleclick = async (
   }
 };
 
-export const handleAddCourse = async (course, uid) => {
+export const handleAddCourse = async (course, uid, setcourse) => {
   const cname = (course?.cname || "").trim();
 
   if (!uid) {
@@ -149,6 +149,10 @@ export const handleAddCourse = async (course, uid) => {
       courseData
     );
     alert(resp.data);
+
+    if (setcourse) {
+      setcourse({ cname: "", ownerid: "" });
+    }
   } catch (error) {
     console.error(error);
     alert("Failed to add course");
