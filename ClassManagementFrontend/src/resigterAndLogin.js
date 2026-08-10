@@ -1,160 +1,229 @@
 import axios from "axios";
-import App from "./App";
 
 const BASE_URL = "https://classmanagement-backend.onrender.com";
 
 export function register(e, registerform, setregisterform) {
-setregisterform({ ...registerform, [e.target.name]: e.target.value });
+  setregisterform({
+    ...registerform,
+    [e.target.name]: e.target.value,
+  });
 }
 
 export function login(e, loginform, setLoginForm) {
-setLoginForm({ ...loginform, [e.target.name]: e.target.value });
+  setLoginForm({
+    ...loginform,
+    [e.target.name]: e.target.value,
+  });
 }
 
 export function AddCourse(e, course, setcourse) {
-setcourse({ ...course, [e.target.name]: e.target.value });
+  setcourse({
+    ...course,
+    [e.target.name]: e.target.value,
+  });
 }
 
-export let handleloginclclick = async (
-SetLoginUI,
-loginform,
-setRole,
-setGetCourse,
-setCurrent
+export const handleloginclclick = async (
+  SetLoginUI,
+  loginform,
+  setRole,
+  setGetCourse,
+  setCurrent
 ) => {
-if (
-loginform.email.trim() === "" ||
-loginform.password.trim() === ""
-) {
-alert("Please enter email and password");
-return;
-}
+  // Spaces पूर्ण काढून टाकणे आणि Small Letters मध्ये करणे
+  const email = (loginform?.email || "").replace(/\s+/g, "").toLowerCase();
+  const password = (loginform?.password || "").trim(); // पासवर्डमधील फक्त पुढच्या-मागच्या स्पेस काढल्या आहेत
 
-let resp = await axios.post(
-`${BASE_URL}/users/login`,
-loginform
-);
+  if (email === "" || password === "") {
+    alert("Please enter email and password");
+    return;
+  }
 
-if (
-resp.data.role !== "student" &&
-resp.data.role !== "teacher"
-) {
-alert("Email or password not matched");
-return;
-}
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/users/login`,
+      {
+        ...loginform,
+        email: email, // Validated email पाठवले
+      }
+    );
+    
+    // Role मधील Space आणि Case Ignore
+    const role = (resp.data.role || "").replace(/\s+/g, "").toLowerCase();
 
-SetLoginUI(null);
-setRole(resp.data.role);
-setCurrent(resp.data);
+    if (role !== "student" && role !== "teacher") {
+      alert("Email or password not matched");
+      return;
+    }
 
-let response = await axios.get(
-`${BASE_URL}/course/getallcourse`
-);
+    SetLoginUI(null);
+    setRole(role);
+    setCurrent({
+      ...resp.data,
+      role,
+    });
 
-setGetCourse(response.data);
+    const response = await axios.get(
+      `${BASE_URL}/course/getallcourse`
+    );
+
+    setGetCourse(response.data);
+  } catch (error) {
+    console.error(error);
+    alert("Login failed");
+  }
 };
 
 export const handleclick = async (
-registerform,
-setRegisterUI,
-SetLoginUI
+  registerform,
+  setRegisterUI,
+  SetLoginUI
 ) => {
-if (
-registerform.role.trim() === "" ||
-registerform.name.trim() === "" ||
-registerform.email.trim() === "" ||
-registerform.password.trim() === ""
-) {
-alert("Please fill all fields");
-return;
-}
+  // Role, Name, Email मधील Spaces आणि Capital/Small Case Ignore करणे
+  const role = (registerform?.role || "").replace(/\s+/g, "").toLowerCase();
+  const name = (registerform?.name || "").trim();
+  const email = (registerform?.email || "").replace(/\s+/g, "").toLowerCase();
+  const password = (registerform?.password || "").trim();
 
-if (!registerform.email.includes("@")) {
-alert("Enter valid email");
-return;
-}
+  if (role === "" || name === "" || email === "" || password === "") {
+    alert("Please fill all fields");
+    return;
+  }
+  if (!email.includes("@")) {
+    alert("Enter valid email");
+    return;
+  }
+  if (password.length < 5) {
+    alert("Password must be at least 5 characters");
+    return;
+  }
 
-if (registerform.password.length < 5) {
-alert("Password must be at least 5 characters");
-return;
-}
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/users/adduser`,
+      {
+        ...registerform,
+        email: email,
+        role: role
+      }
+    );
+    
+    // Backend प्रतिसाद चेक करताना Case Ignore करणे
+    const responseData = (typeof resp.data === "string" ? resp.data : "").trim().toLowerCase();
 
-let resp = await axios.post(
-`${BASE_URL}/users/adduser`,
-registerform
-);
+    if (!responseData.includes("sucussfully registed")) {
+      alert(resp.data);
+      return;
+    }
 
-if (resp.data !== "SucussFully Registed") {
-alert(resp.data);
-return;
-}
-
-alert("SucussFully Registed");
-setRegisterUI(null);
-SetLoginUI("login");
+    alert("SucussFully Registed");
+    setRegisterUI(null);
+    SetLoginUI("login");
+  } catch (error) {
+    console.error(error);
+    alert("Registration failed");
+  }
 };
 
 export const handleAddCourse = async (course, uid) => {
-if (course.cname.trim() === "") {
-alert("Enter course name");
-return;
-}
+  const cname = (course?.cname || "").trim();
 
-course.ownerid = uid;
+  if (!uid) {
+    alert("User ID missing. Please login again.");
+    return;
+  }
 
-let resp = await axios.post(
-`${BASE_URL}/course/addcourse`,
-course
-);
+  if (cname === "") {
+    alert("Enter course name");
+    return;
+  }
 
-alert(resp.data);
+  const courseData = {
+    ...course,
+    ownerid: uid,
+  };
+
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/course/addcourse`,
+      courseData
+    );
+    alert(resp.data);
+  } catch (error) {
+    console.error(error);
+    alert("Failed to add course");
+  }
 };
 
 export const handleMyCourse = async (setMyCourse, uid) => {
-let resp = await axios.get(
-`${BASE_URL}/course/getmybuycourses/${uid}`
-);
+  if (!uid) return;
 
-setMyCourse(resp.data);
-console.log("bgbgg");
-console.log(resp.data);
+  try {
+    const resp = await axios.get(
+      `${BASE_URL}/course/getmybuycourses/${uid}`
+    );
+    setMyCourse(resp.data);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const handlebuycourse = async (cid, uid, setMyCourse) => {
-await axios.post(
-`${BASE_URL}/users/buycourse/${cid}/${uid}`
-);
+  if (!cid || !uid) {
+    alert("Invalid course or user ID");
+    return;
+  }
 
-handleMyCourse(setMyCourse, uid);
+  try {
+    await axios.post(
+      `${BASE_URL}/users/buycourse/${cid}/${uid}`
+    );
+    handleMyCourse(setMyCourse, uid);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const handleDeleteBuyCourses = async (
-cid,
-uid,
-setMyCourse
+  cid,
+  uid,
+  setMyCourse
 ) => {
-await axios.delete(
-`${BASE_URL}/users/delete/${cid}/${uid}`
-);
+  if (!cid || !uid) return;
 
-handleMyCourse(setMyCourse, uid);
+  try {
+    await axios.delete(
+      `${BASE_URL}/users/delete/${cid}/${uid}`
+    );
+    handleMyCourse(setMyCourse, uid);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const handleMyAddedCourses = async (
-uid,
-setMyAddedCourses,
-showCourses,
-setShowCourses
+  uid,
+  setMyAddedCourses,
+  showCourses,
+  setShowCourses
 ) => {
-if (showCourses) {
-setShowCourses(false);
-return;
-}
+  if (showCourses) {
+    setShowCourses(false);
+    return;
+  }
 
-let resp = await axios.get(
-`${BASE_URL}/course/getmycourses/${uid}`
-);
+  if (!uid) {
+    alert("User ID missing");
+    return;
+  }
 
-setMyAddedCourses(resp.data);
-setShowCourses(true);
+  try {
+    const resp = await axios.get(
+      `${BASE_URL}/course/getmycourses/${uid}`
+    );
+    setMyAddedCourses(resp.data);
+    setShowCourses(true);
+  } catch (error) {
+    console.error(error);
+  }
 };
