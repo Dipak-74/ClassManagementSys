@@ -286,7 +286,7 @@ function App() {
     type="text"
     name="cname"
     placeholder="Course Name"
-    value={course.cname} // 👈 हा बदल जोडला आहे (फॉर्म Clear होण्यासाठी)
+    value={course.cname} 
     onChange={handleChangeCourse}
     style={{ marginBottom: 0 }}
   />
