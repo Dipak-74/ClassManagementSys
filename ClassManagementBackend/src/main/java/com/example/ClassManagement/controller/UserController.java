@@ -1,7 +1,5 @@
 package com.example.ClassManagement.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +16,7 @@ import com.example.ClassManagement.services.UserserviceImpl;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(origins = {"http://127.0.0.1:5500","http://localhost:5173"})
+@CrossOrigin(origins  = "*")
 public class UserController {
 
 		@Autowired

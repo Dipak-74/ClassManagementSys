@@ -17,7 +17,7 @@ import com.example.ClassManagement.services.CourseServicesImple;
 
 @RestController
 @RequestMapping("/course")
-@CrossOrigin(origins  = {"http://127.0.0.1:5500","http://localhost:5173"})
+@CrossOrigin(origins  = "*")
 public class CourseController {
 
 		@Autowired
