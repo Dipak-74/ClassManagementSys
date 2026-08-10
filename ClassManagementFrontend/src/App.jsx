@@ -164,169 +164,230 @@ function App() {
 
       {/* DASHBOARD AREA */}
       {role && (
-        <div className="card-container dashboard-container">
-          {role === "student" ? (
-            <div>
-              <h2 className="section-header">Available Courses</h2>
-              {getcourse.map((ele, index) => {
-                return (
-                  <div
-                    key={index}
-                    className="course-card"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 16px",
-                      gap: "12px"
-                    }}
-                  >
-                    <span
-                      className="course-title"
-                      style={{ fontSize: "18px", fontWeight: "600" }}
-                    >
-                      {ele.cname}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{
-                        width: "auto",
-                        padding: "5px 14px",
-                        fontSize: "14px",
-                        whiteSpace: "nowrap"
-                      }}
-                      onClick={() => {
-                        handlebuycourse(ele.cid, current.uid, setMyCourse);
-                      }}
-                    >
-                      Buy Course
-                    </button>
-                  </div>
-                );
-              })}
+     <div className="card-container dashboard-container">
+  {role === "student" ? (
+    <div>
+      <h2 className="section-header">Available Courses</h2>
+      {getcourse.map((ele, index) => {
+        return (
+          <div
+            key={index}
+            className="course-card"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "10px 16px",
+              gap: "12px",
+              marginBottom: "12px"
+            }}
+          >
+            <span
+              className="course-title"
+              style={{ fontSize: "18px", fontWeight: "600" }}
+            >
+              {ele.cname}
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{
+                width: "auto",
+                padding: "5px 14px",
+                fontSize: "14px",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => {
+                handlebuycourse(ele.cid, current.uid, setMyCourse);
+              }}
+            >
+              Buy Course
+            </button>
+          </div>
+        );
+      })}
 
-              <div style={{ marginTop: "28px" }}>
+      <div style={{ marginTop: "28px" }}>
+        <button
+          type="button"
+          className="btn btn-success"
+          onClick={() => {
+            handleMyCourse(setMyCourse, current.uid);
+            setMyCourseBtn(!mycoursebtn);
+          }}
+        >
+          My Courses
+        </button>
+      </div>
+
+      {mycourse && mycoursebtn && (
+        <div style={{ marginTop: "24px" }}>
+          <h3 className="section-header">Purchased Courses</h3>
+          {mycourse.map((ele, index) => {
+            return (
+              <div
+                key={index}
+                className="course-card"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 16px",
+                  gap: "12px",
+                  marginBottom: "12px"
+                }}
+              >
+                <span
+                  className="course-title"
+                  style={{ fontSize: "18px", fontWeight: "600" }}
+                >
+                  {ele.cname}
+                </span>
                 <button
-                  type="button"
-                  className="btn btn-success"
+                  className="btn btn-danger"
+                  style={{
+                    width: "auto",
+                    padding: "5px 14px",
+                    fontSize: "14px",
+                    whiteSpace: "nowrap"
+                  }}
                   onClick={() => {
-                    handleMyCourse(setMyCourse, current.uid);
-                    setMyCourseBtn(!mycoursebtn);
+                    handleDeleteBuyCourses(
+                      ele.cid,
+                      current.uid,
+                      setMyCourse
+                    );
                   }}
                 >
-                  My Courses
+                  Delete
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div>
+      <h2 className="section-header">Teacher Portal</h2>
+      <form
+        className="custom-form"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "24px"
+        }}
+      >
+        <input
+          className="custom-input"
+          type="text"
+          name="cname"
+          placeholder="Course Name"
+          onChange={handleChangeCourse}
+          style={{ marginBottom: 0 }}
+        />
+        <button
+          type="button"
+          className="btn btn-success"
+          style={{ width: "auto", whiteSpace: "nowrap", padding: "10px 18px" }}
+          onClick={() => handleAddCourse(course, current.uid)}
+        >
+          Add Course
+        </button>
+      </form>
+
+      <button
+        className="btn btn-primary"
+        onClick={() =>
+          handleMyAddedCourses(
+            current.uid,
+            setMyAddedCourses,
+            showCourses,
+            setShowCourses
+          )
+        }
+      >
+        My Added Courses
+      </button>
+
+      {showCourses && myAddedCourses.length > 0 && (
+        <div style={{ marginTop: "24px" }}>
+          {myAddedCourses.map((ele) => (
+            <div
+              key={ele.cid}
+              className="course-card"
+              style={{ padding: "12px 16px", marginBottom: "12px" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  alignItems: "center"
+                }}
+              >
+                <span
+                  className="course-title"
+                  style={{ fontSize: "18px", fontWeight: "600" }}
+                >
+                  {ele.cname}
+                </span>
+                <button
+                  className="btn btn-outline"
+                  style={{
+                    width: "auto",
+                    padding: "5px 14px",
+                    fontSize: "14px",
+                    whiteSpace: "nowrap"
+                  }}
+                  onClick={() => hidestudent(ele.cid)}
+                >
+                  {selectedCourse === ele.cid
+                    ? "Hide Students"
+                    : "Show Students"}
                 </button>
               </div>
 
-              {mycourse && mycoursebtn && (
-                <div style={{ marginTop: "24px" }}>
-                  <h3 className="section-header">Purchased Courses</h3>
-                  {mycourse.map((ele, index) => {
-                    return (
-                      <div key={index} className="course-card">
-                        <span className="course-title">{ele.cname}</span>
-                        <button
-                          className="btn btn-danger"
-                          style={{ width: "auto", padding: "8px 18px" }}
-                          onClick={() => {
-                            handleDeleteBuyCourses(
-                              ele.cid,
-                              current.uid,
-                              setMyCourse
-                            );
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <h2 className="section-header">Teacher Portal</h2>
-              <form className="custom-form" style={{ marginBottom: "24px" }}>
-                <input
-                  className="custom-input"
-                  type="text"
-                  name="cname"
-                  placeholder="Course Name"
-                  onChange={handleChangeCourse}
-                />
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={() => handleAddCourse(course, current.uid)}
+              {selectedCourse === ele.cid && (
+                <div
+                  className="student-box"
+                  style={{
+                    width: "100%",
+                    marginTop: "12px",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    alignItems: "center"
+                  }}
                 >
-                  Add Course
-                </button>
-              </form>
-
-              <button
-                className="btn btn-primary"
-                onClick={() =>
-                  handleMyAddedCourses(
-                    current.uid,
-                    setMyAddedCourses,
-                    showCourses,
-                    setShowCourses
-                  )
-                }
-              >
-                My Added Courses
-              </button>
-
-              {showCourses && myAddedCourses.length > 0 && (
-                <div style={{ marginTop: "24px" }}>
-                  {myAddedCourses.map((ele) => (
-                    <div
-                      key={ele.cid}
-                      className="course-card"
-                      style={{ flexDirection: "column", alignItems: "flex-start" }}
-                    >
-                      <div
+                  {ele.userRespDTO.length === 0 ? (
+                    <span className="empty-msg">No enrolled students</span>
+                  ) : (
+                    ele.userRespDTO.map((stud, index) => (
+                      <span
+                        key={index}
+                        className="student-name"
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          alignItems: "center"
+                          backgroundColor: "#f0f2f5",
+                          padding: "4px 10px",
+                          borderRadius: "4px",
+                          fontSize: "14px"
                         }}
                       >
-                        <span className="course-title">{ele.cname}</span>
-                        <button
-                          className="btn btn-outline"
-                          style={{ width: "auto", padding: "6px 14px" }}
-                          onClick={() => hidestudent(ele.cid)}
-                        >
-                          {selectedCourse === ele.cid
-                            ? "Hide Students"
-                            : "Show Students"}
-                        </button>
-                      </div>
-
-                      {selectedCourse === ele.cid && (
-                        <div className="student-box" style={{ width: "100%" }}>
-                          {ele.userRespDTO.length === 0 ? (
-                            <span className="empty-msg">No enrolled students</span>
-                          ) : (
-                            ele.userRespDTO.map((stud, index) => (
-                              <span key={index} className="student-name">
-                                {stud.name}
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        {stud.name}
+                      </span>
+                    ))
+                  )}
                 </div>
               )}
             </div>
-          )}
+          ))}
         </div>
+      )}
+    </div>
+  )}
+</div>
       )}
     </div>
   );
