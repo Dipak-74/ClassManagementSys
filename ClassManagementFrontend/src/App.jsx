@@ -170,12 +170,32 @@ function App() {
               <h2 className="section-header">Available Courses</h2>
               {getcourse.map((ele, index) => {
                 return (
-                  <div key={index} className="course-card">
-                    <span className="course-title">{ele.cname}</span>
+                  <div
+                    key={index}
+                    className="course-card"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 16px",
+                      gap: "12px"
+                    }}
+                  >
+                    <span
+                      className="course-title"
+                      style={{ fontSize: "18px", fontWeight: "600" }}
+                    >
+                      {ele.cname}
+                    </span>
                     <button
                       type="button"
                       className="btn btn-primary"
-                      style={{ width: "auto", padding: "8px 24px" }}
+                      style={{
+                        width: "auto",
+                        padding: "5px 14px",
+                        fontSize: "14px",
+                        whiteSpace: "nowrap"
+                      }}
                       onClick={() => {
                         handlebuycourse(ele.cid, current.uid, setMyCourse);
                       }}
@@ -270,7 +290,7 @@ function App() {
                       <div
                         style={{
                           display: "flex",
-                            justifyContent: "space-between",
+                          justifyContent: "space-between",
                           width: "100%",
                           alignItems: "center"
                         }}
