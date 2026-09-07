@@ -89,14 +89,14 @@ function App() {
                 className="btn btn-primary"
                 onClick={handleloginclick}
               >
-                Login
+                login
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => (setRegisterUI("register"), SetLoginUI(null))}
               >
-                Register
+                register
               </button>
             </div>
           </form>
