@@ -2,6 +2,21 @@ import axios from "axios";
 
 const BASE_URL = "https://classmanagement-backend.onrender.com";
 
+function getErrorMessage(error, fallback) {
+  const data = error?.response?.data;
+
+  if (typeof data === "string" && data.trim()) {
+    return data;
+  }
+  if (data?.message) {
+    return data.message;
+  }
+  if (data?.error) {
+    return data.error;
+  }
+  return fallback;
+}
+
 export function register(e, registerform, setregisterform) {
   setregisterform({
     ...registerform,
@@ -75,7 +90,7 @@ export const handleloginclclick = async (
     setGetCourse(response.data);
   } catch (error) {
     console.error(error);
-    alert("Login failed");
+    alert(getErrorMessage(error, "Login failed"));
   }
 };
 
@@ -117,7 +132,7 @@ export const handleclick = async (
     const responseData = (typeof resp.data === "string" ? resp.data : "").trim().toLowerCase();
 
     if (!responseData.includes("registered")) {
-      alert(resp.data);
+      alert(typeof resp.data === "string" ? resp.data : "Registration failed");
       return;
     }
 
@@ -126,7 +141,7 @@ export const handleclick = async (
     SetLoginUI("login");
   } catch (error) {
     console.error(error);
-    alert("Registration failed");
+    alert(getErrorMessage(error, "Registration failed"));
   }
 };
 
@@ -160,7 +175,7 @@ export const handleAddCourse = async (course, uid, setcourse) => {
     }
   } catch (error) {
     console.error(error);
-    alert("Failed to add course");
+    alert(getErrorMessage(error, "Failed to add course"));
   }
 };
 
@@ -174,7 +189,7 @@ export const handleMyCourse = async (setMyCourse, uid) => {
     setMyCourse(resp.data);
   } catch (error) {
     console.error(error);
-    alert(error.response?.data || "Unable to load your courses");
+    alert(getErrorMessage(error, "Unable to load your courses"));
   }
 };
 
@@ -191,7 +206,7 @@ export const handlebuycourse = async (cid, uid, setMyCourse) => {
     handleMyCourse(setMyCourse, uid);
   } catch (error) {
     console.error(error);
-    alert(error.response?.data || "Unable to load added courses");
+    alert(getErrorMessage(error, "Unable to buy course"));
   }
 };
 
@@ -209,6 +224,7 @@ export const handleDeleteBuyCourses = async (
     handleMyCourse(setMyCourse, uid);
   } catch (error) {
     console.error(error);
+    alert(getErrorMessage(error, "Unable to delete course"));
   }
 };
 
@@ -236,5 +252,6 @@ export const handleMyAddedCourses = async (
     setShowCourses(true);
   } catch (error) {
     console.error(error);
+    alert(getErrorMessage(error, "Unable to load added courses"));
   }
 };
