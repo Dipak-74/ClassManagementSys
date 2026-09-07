@@ -96,7 +96,7 @@ function App() {
                 className="btn btn-secondary"
                 onClick={() => (setRegisterUI("register"), SetLoginUI(null))}
               >
-                register
+                Register
               </button>
             </div>
           </form>
