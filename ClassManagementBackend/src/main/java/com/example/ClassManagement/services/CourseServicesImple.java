@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ClassManagement.DTO.CourseDTO;
 import com.example.ClassManagement.DTO.CourseRespDTO;
@@ -34,6 +35,7 @@ public class CourseServicesImple implements CourseServices{
 	
 	
 	@Override
+	@Transactional(readOnly = true)
 	public List<CourseDTO> getmycourse(int ownerid) {
 		List<Course>listcourse=crepo.findByownerid(ownerid);
 		System.out.println(listcourse);
@@ -45,6 +47,9 @@ public class CourseServicesImple implements CourseServices{
 			cd.setOwnerid(c.getOwnerid());
 			List<Users>user= c.getUsers();
 			List<UserRespDTO>ud=new ArrayList<UserRespDTO>();
+			if (user == null) {
+				user = new ArrayList<>();
+			}
 			for(Users u:user) {
 				UserRespDTO dto=new UserRespDTO();
 				dto.setUid(u.getUid());
@@ -74,9 +79,11 @@ public class CourseServicesImple implements CourseServices{
 	}
 	
 	@Override
+	@Transactional(readOnly = true)
 	public List<CourseRespDTO> getMyBuyCourses(int uid) {
 		Users user=urepo.findById(uid).orElse(null);
-		List<Course>listc=user.getCourse();
+		List<Course>listc=user == null || user.getCourse() == null
+				? new ArrayList<>() : user.getCourse();
 		List<CourseRespDTO>listCRD=new ArrayList<CourseRespDTO>();
 		for(Course c:listc) {
 			CourseRespDTO dto=new CourseRespDTO();

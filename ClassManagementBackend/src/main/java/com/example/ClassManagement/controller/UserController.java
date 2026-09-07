@@ -31,11 +31,11 @@ public class UserController {
 			return impl.login(dto);
 		}
 		@PostMapping("/buycourse/{cid}/{uid}")
-		String buycourse(@RequestBody @PathVariable int cid, @PathVariable int uid ) {
+		String buycourse(@PathVariable int cid, @PathVariable int uid ) {
 			return impl.buycourse(cid, uid);
 		}
 		@DeleteMapping("/delete/{cid}/{uid}")
-		String deleteBuyCourse(@RequestBody @PathVariable int cid,@PathVariable int uid) {
+		String deleteBuyCourse(@PathVariable int cid,@PathVariable int uid) {
 			return impl.deleteBuyCourse(cid,uid);
 		}
 		

@@ -29,7 +29,7 @@ public class CourseController {
 		}
 		
 		@GetMapping("/getmycourses/{ownerid}")
-		List<CourseDTO> getmycourses(@RequestBody @PathVariable int ownerid){
+		List<CourseDTO> getmycourses(@PathVariable int ownerid){
 			return imple.getmycourse(ownerid);
 		}
 		@GetMapping("/getallcourse")
@@ -38,7 +38,7 @@ public class CourseController {
 		}
 		
 		@GetMapping("/getmybuycourses/{uid}")
-		List<CourseRespDTO>getMyBuyCourses(@RequestBody @PathVariable int uid){
+		List<CourseRespDTO>getMyBuyCourses(@PathVariable int uid){
 			return imple.getMyBuyCourses(uid);
 		  }
 }
