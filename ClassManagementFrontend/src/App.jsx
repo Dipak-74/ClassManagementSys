@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useState } from "react";
 import {
   register,
@@ -68,7 +67,7 @@ function App() {
       {/* LOGIN FORM */}
       {loginUI && (
         <div className="card-container">
-          <form className="custom-form">
+            <form className="custom-form" onSubmit={(e) => e.preventDefault()}>
             <h2 className="form-title">Welcome Back</h2>
             <input
               className="custom-input"
@@ -86,14 +85,14 @@ function App() {
             />
             <div className="btn-group">
               <button
-                type="reset"
+                type="button"
                 className="btn btn-primary"
                 onClick={handleloginclick}
               >
                 Login
               </button>
               <button
-                type="reset"
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => (setRegisterUI("register"), SetLoginUI(null))}
               >
@@ -107,7 +106,7 @@ function App() {
       {/* REGISTER FORM */}
       {registerUI && (
         <div className="card-container">
-          <form className="custom-form">
+          <form className="custom-form" onSubmit={(e) => e.preventDefault()}>
             <h2 className="form-title">Create Account</h2>
             <input
               className="custom-input"
@@ -139,7 +138,7 @@ function App() {
             />
             <div className="btn-group">
               <button
-                type="reset"
+                type="button"
                 className="btn btn-success"
                 onClick={() => {
                   handleclick(registerform, setRegisterUI, SetLoginUI);
@@ -148,7 +147,7 @@ function App() {
                 Register
               </button>
               <button
-                type="reset"
+                type="button"
                 className="btn btn-danger"
                 onClick={() => {
                   SetLoginUI("login");

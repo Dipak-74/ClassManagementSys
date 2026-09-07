@@ -43,10 +43,15 @@ export const handleloginclclick = async (
     const resp = await axios.post(
       `${BASE_URL}/users/login`,
       {
-        ...loginform,
-        email: email, // Validated email पाठवले
+        email,
+        password,
       }
     );
+
+    if (!resp.data) {
+      alert("Email or password not matched");
+      return;
+    }
     
     // Role मधील Space आणि Case Ignore
     const role = (resp.data.role || "").replace(/\s+/g, "").toLowerCase();
