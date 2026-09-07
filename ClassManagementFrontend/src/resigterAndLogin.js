@@ -116,12 +116,12 @@ export const handleclick = async (
     // Backend प्रतिसाद चेक करताना Case Ignore करणे
     const responseData = (typeof resp.data === "string" ? resp.data : "").trim().toLowerCase();
 
-    if (!responseData.includes("sucussfully registed")) {
+    if (!responseData.includes("registered")) {
       alert(resp.data);
       return;
     }
 
-    alert("SucussFully Registed");
+    alert("Registration successful. Please login.");
     setRegisterUI(null);
     SetLoginUI("login");
   } catch (error) {
@@ -174,6 +174,7 @@ export const handleMyCourse = async (setMyCourse, uid) => {
     setMyCourse(resp.data);
   } catch (error) {
     console.error(error);
+    alert(error.response?.data || "Unable to load your courses");
   }
 };
 
@@ -190,6 +191,7 @@ export const handlebuycourse = async (cid, uid, setMyCourse) => {
     handleMyCourse(setMyCourse, uid);
   } catch (error) {
     console.error(error);
+    alert(error.response?.data || "Unable to load added courses");
   }
 };
 

@@ -129,13 +129,16 @@ function App() {
               placeholder="Enter Password"
               onChange={handleregister}
             />
-            <input
+            <select
               className="custom-input"
-              type="text"
               name="role"
-              placeholder="Enter Role (student/teacher)"
+              defaultValue=""
               onChange={handleregister}
-            />
+            >
+              <option value="" disabled>Select account type</option>
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+            </select>
             <div className="btn-group">
               <button
                 type="button"
@@ -367,7 +370,7 @@ function App() {
                     alignItems: "center"
                   }}
                 >
-                  {ele.userRespDTO.length === 0 ? (
+                  {!ele.userRespDTO || ele.userRespDTO.length === 0 ? (
                     <span className="empty-msg">No enrolled students</span>
                   ) : (
                     ele.userRespDTO.map((stud, index) => (
