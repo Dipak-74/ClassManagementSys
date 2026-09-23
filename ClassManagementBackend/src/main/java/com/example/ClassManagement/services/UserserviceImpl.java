@@ -1,11 +1,11 @@
 package com.example.ClassManagement.services;
 
-
 import java.util.List;
 import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ClassManagement.DTO.UserRespDTO;
 import com.example.ClassManagement.DTO.UsersDTO;
@@ -16,6 +16,7 @@ import com.example.ClassManagement.repo.CourseRepo;
 import com.example.ClassManagement.repo.UsersRepo;
 
 @Service
+@Transactional
 public class UserserviceImpl implements UserServices {
 
 	@Autowired
@@ -52,32 +53,31 @@ public class UserserviceImpl implements UserServices {
 		urepo.save(user);
 		return "Successfully registered";
 	}
+
 	@Override
+	@Transactional(readOnly = true)
 	public UserRespDTO login(loginDto dto) {
 		if (dto == null || isBlank(dto.getEmail()) || isBlank(dto.getPassword())) {
 			return null;
 		}
-		Users user=urepo.findByEmail(dto.getEmail().trim().toLowerCase());
-		UserRespDTO userRespDTO=new UserRespDTO();
-		
-			if(user==null) {
-				return null;
-			}
-			
-			if(!user.getPassword().equals(dto.getPassword().trim())) {
-				return null;
-			}
-			userRespDTO.setUid(user.getUid());
-			userRespDTO.setName(user.getName());
-			userRespDTO.setEmail(user.getEmail());
-			userRespDTO.setRole(user.getRole());
-			
+		Users user = urepo.findByEmail(dto.getEmail().trim().toLowerCase());
+		if (user == null) {
+			return null;
+		}
+		if (!user.getPassword().equals(dto.getPassword().trim())) {
+			return null;
+		}
+		UserRespDTO userRespDTO = new UserRespDTO();
+		userRespDTO.setUid(user.getUid());
+		userRespDTO.setName(user.getName());
+		userRespDTO.setEmail(user.getEmail());
+		userRespDTO.setRole(user.getRole());
 		return userRespDTO;
 	}
 	
 	@Override
 	public String buycourse(int cid, int uid) {
-		Users user = urepo.findById(uid).orElse(null);
+		Users user = urepo.findByIdWithCourses(uid).orElse(null);
 		Course course = crepo.findById(cid).orElse(null);
 		if (user == null || course == null) {
 			return "User or course not found";
@@ -98,7 +98,7 @@ public class UserserviceImpl implements UserServices {
 
 	@Override
 	public String deleteBuyCourse(int cid, int uid) {
-		Users user = urepo.findById(uid).orElse(null);
+		Users user = urepo.findByIdWithCourses(uid).orElse(null);
 		if (user == null || user.getCourse() == null) {
 			return "User or courses not found";
 		}
@@ -113,6 +113,4 @@ public class UserserviceImpl implements UserServices {
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
 	}
-	
-	
 }

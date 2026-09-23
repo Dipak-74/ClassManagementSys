@@ -15,8 +15,8 @@ import com.example.ClassManagement.entities.Users;
 import com.example.ClassManagement.repo.CourseRepo;
 import com.example.ClassManagement.repo.UsersRepo;
 
-
 @Service
+@Transactional
 public class CourseServicesImple implements CourseServices{
 
 	@Autowired
@@ -36,46 +36,48 @@ public class CourseServicesImple implements CourseServices{
 		return "Course added successfully";
 	}
 	
-	
 	@Override
 	@Transactional(readOnly = true)
 	public List<CourseDTO> getmycourse(int ownerid) {
-		List<Course>listcourse=crepo.findByownerid(ownerid);
-		List<CourseDTO>listdto= new ArrayList<CourseDTO>();
-		for(Course c:listcourse) {
-			CourseDTO cd=new CourseDTO();
+		List<Course> listcourse = crepo.findByownerid(ownerid);
+		List<CourseDTO> listdto = new ArrayList<>();
+		if (listcourse == null) {
+			return listdto;
+		}
+		for(Course c : listcourse) {
+			CourseDTO cd = new CourseDTO();
 			cd.setCid(c.getCid());
 			cd.setCname(c.getCname());
 			cd.setOwnerid(c.getOwnerid());
-			List<Users>user= c.getUsers();
-			List<UserRespDTO>ud=new ArrayList<UserRespDTO>();
-			if (user == null) {
-				user = new ArrayList<>();
-			}
-			for(Users u:user) {
-				UserRespDTO dto=new UserRespDTO();
-				dto.setUid(u.getUid());
-				dto.setName(u.getName());
-				ud.add(dto);
+			List<Users> user = c.getUsers();
+			List<UserRespDTO> ud = new ArrayList<>();
+			if (user != null) {
+				for(Users u : user) {
+					UserRespDTO dto = new UserRespDTO();
+					dto.setUid(u.getUid());
+					dto.setName(u.getName());
+					dto.setEmail(u.getEmail());
+					ud.add(dto);
+				}
 			}
 			cd.setUserRespDTO(ud);
 			listdto.add(cd);
 		}
 		
-		return  listdto;
+		return listdto;
 	}
 	
 	@Override
+	@Transactional(readOnly = true)
 	public List<CourseRespDTO> getAllCourses() {
-		List<CourseRespDTO>listCRD=new ArrayList<CourseRespDTO>();
-		List<Course>listC=crepo.findAll();
-		for(Course c:listC) {
-			CourseRespDTO CRD=new CourseRespDTO();
+		List<CourseRespDTO> listCRD = new ArrayList<>();
+		List<Course> listC = crepo.findAll();
+		for(Course c : listC) {
+			CourseRespDTO CRD = new CourseRespDTO();
 			CRD.setCid(c.getCid());
 			CRD.setCname(c.getCname());
 			CRD.setOwnerid(c.getOwnerid());
 			listCRD.add(CRD);
-			
 		}
 		return listCRD;
 	}
@@ -83,12 +85,12 @@ public class CourseServicesImple implements CourseServices{
 	@Override
 	@Transactional(readOnly = true)
 	public List<CourseRespDTO> getMyBuyCourses(int uid) {
-		Users user=urepo.findById(uid).orElse(null);
-		List<Course>listc=user == null || user.getCourse() == null
+		Users user = urepo.findByIdWithCourses(uid).orElse(null);
+		List<Course> listc = (user == null || user.getCourse() == null)
 				? new ArrayList<>() : user.getCourse();
-		List<CourseRespDTO>listCRD=new ArrayList<CourseRespDTO>();
-		for(Course c:listc) {
-			CourseRespDTO dto=new CourseRespDTO();
+		List<CourseRespDTO> listCRD = new ArrayList<>();
+		for(Course c : listc) {
+			CourseRespDTO dto = new CourseRespDTO();
 			dto.setCid(c.getCid());
 			dto.setCname(c.getCname());
 			dto.setOwnerid(c.getOwnerid());
@@ -98,7 +100,6 @@ public class CourseServicesImple implements CourseServices{
 	}
 
 	@Override
-	@Transactional
 	public String deleteCourse(int cid, int ownerid) {
 		Course c = crepo.findById(cid).orElse(null);
 		if (c == null) {

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.ClassManagement.DTO.UserRespDTO;
 import com.example.ClassManagement.DTO.UsersDTO;
 import com.example.ClassManagement.DTO.loginDto;
-import com.example.ClassManagement.services.UserserviceImpl;
+import com.example.ClassManagement.services.UserServices;
 
 @RestController
 @RequestMapping("/users")
@@ -20,7 +20,7 @@ import com.example.ClassManagement.services.UserserviceImpl;
 public class UserController {
 
 		@Autowired
-		UserserviceImpl impl;
+		UserServices impl;
 		
 		@PostMapping("/adduser")
 		String addUsers(@RequestBody UsersDTO dto) {

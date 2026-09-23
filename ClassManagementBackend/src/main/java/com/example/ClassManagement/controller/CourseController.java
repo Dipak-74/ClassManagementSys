@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ClassManagement.DTO.CourseDTO;
 import com.example.ClassManagement.DTO.CourseRespDTO;
-import com.example.ClassManagement.services.CourseServicesImple;
+import com.example.ClassManagement.services.CourseServices;
 
 @RestController
 @RequestMapping("/course")
@@ -22,7 +22,7 @@ import com.example.ClassManagement.services.CourseServicesImple;
 public class CourseController {
 
 		@Autowired
-		CourseServicesImple imple;
+		CourseServices imple;
 		
 		@PostMapping("/addcourse")
 		String addcourse(@RequestBody CourseRespDTO dto) {
