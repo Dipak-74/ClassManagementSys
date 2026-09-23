@@ -77,37 +77,72 @@ public class UserserviceImpl implements UserServices {
 	
 	@Override
 	public String buycourse(int cid, int uid) {
-		Users user = urepo.findByIdWithCourses(uid).orElse(null);
-		Course course = crepo.findById(cid).orElse(null);
-		if (user == null || course == null) {
-			return "User or course not found";
+		try {
+			Users user = null;
+			try {
+				user = urepo.findByIdWithCourses(uid).orElse(null);
+			} catch (Exception e) {
+				user = urepo.findById(uid).orElse(null);
+			}
+			Course course = crepo.findById(cid).orElse(null);
+			if (user == null || course == null) {
+				return "User or course not found";
+			}
+			List<Course> listcourse = null;
+			try {
+				listcourse = user.getCourse();
+			} catch (Exception ex) {
+				listcourse = new ArrayList<>();
+				user.setCourse(listcourse);
+			}
+			if (listcourse == null) {
+				listcourse = new ArrayList<>();
+				user.setCourse(listcourse);
+			}
+			boolean alreadyBought = listcourse.stream().anyMatch(c -> c.getCid() == cid);
+			if (alreadyBought) {
+				return "Course already purchased";
+			}
+			listcourse.add(course);
+			urepo.save(user);
+			return "Enrolled successfully";
+		} catch (Exception e) {
+			System.err.println("Error in buycourse: " + e.getMessage());
+			return "Failed to enroll: " + e.getMessage();
 		}
-		List<Course> listcourse = user.getCourse();
-		if (listcourse == null) {
-			listcourse = new ArrayList<>();
-			user.setCourse(listcourse);
-		}
-		boolean alreadyBought = listcourse.stream().anyMatch(c -> c.getCid() == cid);
-		if (alreadyBought) {
-			return "Course already purchased";
-		}
-		listcourse.add(course);
-		urepo.save(user);
-		return "Enrolled successfully";
 	}
 
 	@Override
 	public String deleteBuyCourse(int cid, int uid) {
-		Users user = urepo.findByIdWithCourses(uid).orElse(null);
-		if (user == null || user.getCourse() == null) {
-			return "User or courses not found";
+		try {
+			Users user = null;
+			try {
+				user = urepo.findByIdWithCourses(uid).orElse(null);
+			} catch (Exception e) {
+				user = urepo.findById(uid).orElse(null);
+			}
+			if (user == null) {
+				return "User not found";
+			}
+			List<Course> listcourse = null;
+			try {
+				listcourse = user.getCourse();
+			} catch (Exception ex) {
+				listcourse = new ArrayList<>();
+			}
+			if (listcourse == null) {
+				return "Course not found in enrolled list";
+			}
+			boolean removed = listcourse.removeIf(c -> c.getCid() == cid);
+			if (!removed) {
+				return "Course not found in enrolled list";
+			}
+			urepo.save(user);
+			return "Unenrolled successfully";
+		} catch (Exception e) {
+			System.err.println("Error in deleteBuyCourse: " + e.getMessage());
+			return "Failed to drop course: " + e.getMessage();
 		}
-		boolean removed = user.getCourse().removeIf(c -> c.getCid() == cid);
-		if (!removed) {
-			return "Course not found in enrolled list";
-		}
-		urepo.save(user);
-		return "Unenrolled successfully";
 	}
 
 	private boolean isBlank(String value) {

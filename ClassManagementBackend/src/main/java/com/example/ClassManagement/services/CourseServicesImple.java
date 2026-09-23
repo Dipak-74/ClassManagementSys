@@ -29,7 +29,7 @@ public class CourseServicesImple implements CourseServices{
 		if (dto == null || dto.getCname() == null || dto.getCname().trim().isEmpty()) {
 			return "Course name cannot be empty";
 		}
-		Course c=new Course();
+		Course c = new Course();
 		c.setCname(dto.getCname().trim());
 		c.setOwnerid(dto.getOwnerid());
 		crepo.save(c);
@@ -39,25 +39,52 @@ public class CourseServicesImple implements CourseServices{
 	@Override
 	@Transactional(readOnly = true)
 	public List<CourseDTO> getmycourse(int ownerid) {
-		List<Course> listcourse = crepo.findByownerid(ownerid);
+		List<Course> listcourse = null;
+		try {
+			listcourse = crepo.findByownerid(ownerid);
+		} catch (Exception e) {
+			System.err.println("Warning: findByownerid with JOIN FETCH failed, using fallback query: " + e.getMessage());
+			try {
+				listcourse = crepo.findAll().stream().filter(c -> c.getOwnerid() == ownerid).toList();
+			} catch (Exception ex) {
+				System.err.println("Error in fallback findAll: " + ex.getMessage());
+				listcourse = new ArrayList<>();
+			}
+		}
+
 		List<CourseDTO> listdto = new ArrayList<>();
 		if (listcourse == null) {
 			return listdto;
 		}
-		for(Course c : listcourse) {
+
+		for (Course c : listcourse) {
 			CourseDTO cd = new CourseDTO();
 			cd.setCid(c.getCid());
 			cd.setCname(c.getCname());
 			cd.setOwnerid(c.getOwnerid());
-			List<Users> user = c.getUsers();
+
+			List<Users> user = null;
+			try {
+				user = c.getUsers();
+			} catch (Exception ex) {
+				System.err.println("Notice: could not lazily load users for course " + c.getCid() + ": " + ex.getMessage());
+				user = new ArrayList<>();
+			}
+
 			List<UserRespDTO> ud = new ArrayList<>();
 			if (user != null) {
-				for(Users u : user) {
-					UserRespDTO dto = new UserRespDTO();
-					dto.setUid(u.getUid());
-					dto.setName(u.getName());
-					dto.setEmail(u.getEmail());
-					ud.add(dto);
+				try {
+					for (Users u : user) {
+						if (u != null) {
+							UserRespDTO dto = new UserRespDTO();
+							dto.setUid(u.getUid());
+							dto.setName(u.getName());
+							dto.setEmail(u.getEmail());
+							ud.add(dto);
+						}
+					}
+				} catch (Exception ex) {
+					System.err.println("Notice: error reading users collection: " + ex.getMessage());
 				}
 			}
 			cd.setUserRespDTO(ud);
@@ -72,7 +99,7 @@ public class CourseServicesImple implements CourseServices{
 	public List<CourseRespDTO> getAllCourses() {
 		List<CourseRespDTO> listCRD = new ArrayList<>();
 		List<Course> listC = crepo.findAll();
-		for(Course c : listC) {
+		for (Course c : listC) {
 			CourseRespDTO CRD = new CourseRespDTO();
 			CRD.setCid(c.getCid());
 			CRD.setCname(c.getCname());
@@ -85,16 +112,37 @@ public class CourseServicesImple implements CourseServices{
 	@Override
 	@Transactional(readOnly = true)
 	public List<CourseRespDTO> getMyBuyCourses(int uid) {
-		Users user = urepo.findByIdWithCourses(uid).orElse(null);
-		List<Course> listc = (user == null || user.getCourse() == null)
-				? new ArrayList<>() : user.getCourse();
 		List<CourseRespDTO> listCRD = new ArrayList<>();
-		for(Course c : listc) {
-			CourseRespDTO dto = new CourseRespDTO();
-			dto.setCid(c.getCid());
-			dto.setCname(c.getCname());
-			dto.setOwnerid(c.getOwnerid());
-			listCRD.add(dto);
+		try {
+			Users user = null;
+			try {
+				user = urepo.findByIdWithCourses(uid).orElse(null);
+			} catch (Exception e) {
+				user = urepo.findById(uid).orElse(null);
+			}
+
+			if (user != null) {
+				List<Course> listc = null;
+				try {
+					listc = user.getCourse();
+				} catch (Exception ex) {
+					listc = new ArrayList<>();
+				}
+
+				if (listc != null) {
+					for (Course c : listc) {
+						if (c != null) {
+							CourseRespDTO dto = new CourseRespDTO();
+							dto.setCid(c.getCid());
+							dto.setCname(c.getCname());
+							dto.setOwnerid(c.getOwnerid());
+							listCRD.add(dto);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Error in getMyBuyCourses: " + e.getMessage());
 		}
 		return listCRD;
 	}
@@ -108,14 +156,18 @@ public class CourseServicesImple implements CourseServices{
 		if (c.getOwnerid() != ownerid) {
 			return "Unauthorized: You are not the owner of this course";
 		}
-		List<Users> users = c.getUsers();
-		if (users != null) {
-			for (Users u : users) {
-				if (u.getCourse() != null) {
-					u.getCourse().removeIf(item -> item.getCid() == cid);
-					urepo.save(u);
+		try {
+			List<Users> users = c.getUsers();
+			if (users != null) {
+				for (Users u : users) {
+					if (u != null && u.getCourse() != null) {
+						u.getCourse().removeIf(item -> item.getCid() == cid);
+						urepo.save(u);
+					}
 				}
 			}
+		} catch (Exception e) {
+			System.err.println("Notice: cascade remove on deleteCourse failed: " + e.getMessage());
 		}
 		crepo.delete(c);
 		return "Course deleted successfully";

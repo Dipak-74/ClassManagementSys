@@ -126,8 +126,13 @@ export async function apiGetAllCourses() {
 
 export async function apiGetMyBuyCourses(uid) {
   if (!uid) return [];
-  const res = await axios.get(`${getBaseUrl()}/course/getmybuycourses/${uid}`, { timeout: 25000 });
-  return Array.isArray(res.data) ? res.data : [];
+  try {
+    const res = await axios.get(`${getBaseUrl()}/course/getmybuycourses/${uid}`, { timeout: 25000 });
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    console.warn("Unable to fetch enrolled courses:", err);
+    return [];
+  }
 }
 
 export async function apiBuyCourse(cid, uid) {
@@ -161,8 +166,23 @@ export async function apiAddCourse(cname, ownerid) {
 
 export async function apiGetTeacherCourses(ownerid) {
   if (!ownerid) return [];
-  const res = await axios.get(`${getBaseUrl()}/course/getmycourses/${ownerid}`, { timeout: 25000 });
-  return Array.isArray(res.data) ? res.data : [];
+  try {
+    const res = await axios.get(`${getBaseUrl()}/course/getmycourses/${ownerid}`, { timeout: 25000 });
+    if (Array.isArray(res.data)) {
+      return res.data;
+    }
+    throw new Error("Invalid response format");
+  } catch (err) {
+    console.warn("Unable to fetch teacher courses with roster, using fallback:", err);
+    try {
+      const all = await apiGetAllCourses();
+      return all
+        .filter((c) => Number(c.ownerid) === Number(ownerid))
+        .map((c) => ({ ...c, userRespDTO: [] }));
+    } catch {
+      return [];
+    }
+  }
 }
 
 export async function apiDeleteTeacherCourse(cid, ownerid) {
