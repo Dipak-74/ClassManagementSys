@@ -1,10 +1,43 @@
 import axios from "axios";
 
-const BASE_URL = "https://classmanagement-backend.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://classmanagement-backend.onrender.com";
 
-function getErrorMessage(error, fallback) {
+export function getBaseUrl() {
+  return BASE_URL;
+}
+
+// User Session Management
+const USER_STORAGE_KEY = "cms_active_user";
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    if (user && user.uid && user.role) {
+      return user;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeUser(user) {
+  if (!user) {
+    localStorage.removeItem(USER_STORAGE_KEY);
+  } else {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  }
+}
+
+export function clearStoredUser() {
+  localStorage.removeItem(USER_STORAGE_KEY);
+}
+
+// Helper to extract clean error message
+export function getErrorMessage(error, fallback = "Something went wrong") {
   const data = error?.response?.data;
-
   if (typeof data === "string" && data.trim()) {
     return data;
   }
@@ -14,244 +47,126 @@ function getErrorMessage(error, fallback) {
   if (data?.error) {
     return data.error;
   }
+  if (error?.message) {
+    if (error.message.includes("Network Error")) {
+      return "Unable to connect to backend server. Please verify backend is running.";
+    }
+    return error.message;
+  }
   return fallback;
 }
 
-export function register(e, registerform, setregisterform) {
-  setregisterform({
-    ...registerform,
-    [e.target.name]: e.target.value,
-  });
-}
+// ----------------- API Methods ----------------- //
 
-export function login(e, loginform, setLoginForm) {
-  setLoginForm({
-    ...loginform,
-    [e.target.name]: e.target.value,
-  });
-}
+export async function apiLogin(email, password) {
+  const cleanEmail = (email || "").trim().toLowerCase();
+  const cleanPassword = (password || "").trim();
 
-export function AddCourse(e, course, setcourse) {
-  setcourse({
-    ...course,
-    [e.target.name]: e.target.value,
-  });
-}
-
-export const handleloginclclick = async (
-  SetLoginUI,
-  loginform,
-  setRole,
-  setGetCourse,
-  setCurrent
-) => {
-  // Spaces पूर्ण काढून टाकणे आणि Small Letters मध्ये करणे
-  const email = (loginform?.email || "").replace(/\s+/g, "").toLowerCase();
-  const password = (loginform?.password || "").trim(); // पासवर्डमधील फक्त पुढच्या-मागच्या स्पेस काढल्या आहेत
-
-  if (email === "" || password === "") {
-    alert("Please enter email and password");
-    return;
+  if (!cleanEmail || !cleanPassword) {
+    throw new Error("Please enter both email and password");
   }
 
-  try {
-    const resp = await axios.post(
-      `${BASE_URL}/users/login`,
-      {
-        email,
-        password,
-      }
-    );
+  const res = await axios.post(`${getBaseUrl()}/users/login`, {
+    email: cleanEmail,
+    password: cleanPassword,
+  }, { timeout: 25000 });
 
-    if (!resp.data) {
-      alert("Email or password not matched");
-      return;
-    }
-    
-    // Role मधील Space आणि Case Ignore
-    const role = (resp.data.role || "").replace(/\s+/g, "").toLowerCase();
-
-    if (role !== "student" && role !== "teacher") {
-      alert("Email or password not matched");
-      return;
-    }
-
-    SetLoginUI(null);
-    setRole(role);
-    setCurrent({
-      ...resp.data,
-      role,
-    });
-
-    const response = await axios.get(
-      `${BASE_URL}/course/getallcourse`
-    );
-
-    setGetCourse(response.data);
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Login failed"));
-  }
-};
-
-export const handleclick = async (
-  registerform,
-  setRegisterUI,
-  SetLoginUI
-) => {
-  // Role, Name, Email मधील Spaces आणि Capital/Small Case Ignore करणे
-  const role = (registerform?.role || "").replace(/\s+/g, "").toLowerCase();
-  const name = (registerform?.name || "").trim();
-  const email = (registerform?.email || "").replace(/\s+/g, "").toLowerCase();
-  const password = (registerform?.password || "").trim();
-
-  if (role === "" || name === "" || email === "" || password === "") {
-    alert("Please fill all fields");
-    return;
-  }
-  if (!email.includes("@")) {
-    alert("Enter valid email");
-    return;
-  }
-  if (password.length < 5) {
-    alert("Password must be at least 5 characters");
-    return;
+  if (!res.data || !res.data.uid) {
+    throw new Error("Invalid email or password");
   }
 
-  try {
-    const resp = await axios.post(
-      `${BASE_URL}/users/adduser`,
-      {
-        ...registerform,
-        email: email,
-        role: role
-      }
-    );
-    
-    // Backend प्रतिसाद चेक करताना Case Ignore करणे
-    const responseData = (typeof resp.data === "string" ? resp.data : "").trim().toLowerCase();
-
-    if (!responseData.includes("registered")) {
-      alert(typeof resp.data === "string" ? resp.data : "Registration failed");
-      return;
-    }
-
-    alert("Registration successful. Please login.");
-    setRegisterUI(null);
-    SetLoginUI("login");
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Registration failed"));
-  }
-};
-
-export const handleAddCourse = async (course, uid, setcourse) => {
-  const cname = (course?.cname || "").trim();
-
-  if (!uid) {
-    alert("User ID missing. Please login again.");
-    return;
-  }
-
-  if (cname === "") {
-    alert("Enter course name");
-    return;
-  }
-
-  const courseData = {
-    ...course,
-    ownerid: uid,
+  const role = (res.data.role || "").trim().toLowerCase();
+  const user = {
+    ...res.data,
+    role,
   };
 
-  try {
-    const resp = await axios.post(
-      `${BASE_URL}/course/addcourse`,
-      courseData
-    );
-    alert(resp.data);
+  storeUser(user);
+  return user;
+}
 
-    if (setcourse) {
-      setcourse({ cname: "", ownerid: "" });
-    }
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Failed to add course"));
+export async function apiRegister(name, email, password, role) {
+  const cleanName = (name || "").trim();
+  const cleanEmail = (email || "").trim().toLowerCase();
+  const cleanPassword = (password || "").trim();
+  const cleanRole = (role || "").trim().toLowerCase();
+
+  if (!cleanName || !cleanEmail || !cleanPassword || !cleanRole) {
+    throw new Error("All fields are required");
   }
-};
-
-export const handleMyCourse = async (setMyCourse, uid) => {
-  if (!uid) return;
-
-  try {
-    const resp = await axios.get(
-      `${BASE_URL}/course/getmybuycourses/${uid}`
-    );
-    setMyCourse(resp.data);
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Unable to load your courses"));
+  if (!cleanEmail.includes("@")) {
+    throw new Error("Please enter a valid email address");
   }
-};
-
-export const handlebuycourse = async (cid, uid, setMyCourse) => {
-  if (!cid || !uid) {
-    alert("Invalid course or user ID");
-    return;
+  if (cleanPassword.length < 5) {
+    throw new Error("Password must be at least 5 characters");
+  }
+  if (cleanRole !== "student" && cleanRole !== "teacher") {
+    throw new Error("Role must be student or teacher");
   }
 
-  try {
-    await axios.post(
-      `${BASE_URL}/users/buycourse/${cid}/${uid}`
-    );
-    handleMyCourse(setMyCourse, uid);
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Unable to buy course"));
-  }
-};
+  const res = await axios.post(`${getBaseUrl()}/users/adduser`, {
+    name: cleanName,
+    email: cleanEmail,
+    password: cleanPassword,
+    role: cleanRole,
+  }, { timeout: 25000 });
 
-export const handleDeleteBuyCourses = async (
-  cid,
-  uid,
-  setMyCourse
-) => {
-  if (!cid || !uid) return;
-
-  try {
-    await axios.delete(
-      `${BASE_URL}/users/delete/${cid}/${uid}`
-    );
-    handleMyCourse(setMyCourse, uid);
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Unable to delete course"));
-  }
-};
-
-export const handleMyAddedCourses = async (
-  uid,
-  setMyAddedCourses,
-  showCourses,
-  setShowCourses
-) => {
-  if (showCourses) {
-    setShowCourses(false);
-    return;
+  const msg = typeof res.data === "string" ? res.data : "";
+  if (!msg.toLowerCase().includes("registered")) {
+    throw new Error(msg || "Registration failed");
   }
 
-  if (!uid) {
-    alert("User ID missing");
-    return;
-  }
+  return msg || "Registered successfully";
+}
 
-  try {
-    const resp = await axios.get(
-      `${BASE_URL}/course/getmycourses/${uid}`
-    );
-    setMyAddedCourses(resp.data);
-    setShowCourses(true);
-  } catch (error) {
-    console.error(error);
-    alert(getErrorMessage(error, "Unable to load added courses"));
+export async function apiGetAllCourses() {
+  const res = await axios.get(`${getBaseUrl()}/course/getallcourse`, { timeout: 25000 });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function apiGetMyBuyCourses(uid) {
+  if (!uid) return [];
+  const res = await axios.get(`${getBaseUrl()}/course/getmybuycourses/${uid}`, { timeout: 25000 });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function apiBuyCourse(cid, uid) {
+  if (!cid || !uid) throw new Error("Invalid course or user ID");
+  const res = await axios.post(`${getBaseUrl()}/users/buycourse/${cid}/${uid}`, {}, { timeout: 25000 });
+  const msg = typeof res.data === "string" ? res.data : "";
+  if (msg.toLowerCase().includes("already")) {
+    throw new Error(msg);
   }
-};
+  return msg || "Course enrolled successfully";
+}
+
+export async function apiDeleteBuyCourse(cid, uid) {
+  if (!cid || !uid) throw new Error("Invalid course or user ID");
+  const res = await axios.delete(`${getBaseUrl()}/users/delete/${cid}/${uid}`, { timeout: 25000 });
+  return typeof res.data === "string" ? res.data : "Course dropped successfully";
+}
+
+export async function apiAddCourse(cname, ownerid) {
+  const name = (cname || "").trim();
+  if (!name) throw new Error("Course name cannot be empty");
+  if (!ownerid) throw new Error("User ID missing. Please login again.");
+
+  const res = await axios.post(`${getBaseUrl()}/course/addcourse`, {
+    cname: name,
+    ownerid: ownerid,
+  }, { timeout: 25000 });
+
+  return typeof res.data === "string" ? res.data : "Course created successfully";
+}
+
+export async function apiGetTeacherCourses(ownerid) {
+  if (!ownerid) return [];
+  const res = await axios.get(`${getBaseUrl()}/course/getmycourses/${ownerid}`, { timeout: 25000 });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function apiDeleteTeacherCourse(cid, ownerid) {
+  if (!cid || !ownerid) throw new Error("Invalid course or owner ID");
+  const res = await axios.delete(`${getBaseUrl()}/course/delete/${cid}/${ownerid}`, { timeout: 25000 });
+  return typeof res.data === "string" ? res.data : "Course deleted successfully";
+}

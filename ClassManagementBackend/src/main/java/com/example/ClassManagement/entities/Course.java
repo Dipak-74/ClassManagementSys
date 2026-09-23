@@ -52,6 +52,17 @@ public class Course  {
 	public void setUsers(List<Users> users) {
 		this.users = users;
 	}
-	
-	
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Course course = (Course) o;
+		return cid == course.cid;
+	}
+
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(cid);
+	}
 }

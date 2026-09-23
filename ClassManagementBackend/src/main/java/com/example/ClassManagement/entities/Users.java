@@ -80,6 +80,17 @@ public class Users {
 	public void setCourse(List<Course> course) {
 		this.course = course;
 	}
-	
-	
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Users users = (Users) o;
+		return uid == users.uid;
+	}
+
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(uid);
+	}
 }

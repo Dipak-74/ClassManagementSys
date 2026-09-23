@@ -26,11 +26,14 @@ public class CourseServicesImple implements CourseServices{
 	
 	@Override
 	public String addcourse(CourseRespDTO dto) {
+		if (dto == null || dto.getCname() == null || dto.getCname().trim().isEmpty()) {
+			return "Course name cannot be empty";
+		}
 		Course c=new Course();
-		c.setCname(dto.getCname());
+		c.setCname(dto.getCname().trim());
 		c.setOwnerid(dto.getOwnerid());
 		crepo.save(c);
-		return "Add Course";
+		return "Course added successfully";
 	}
 	
 	
@@ -38,7 +41,6 @@ public class CourseServicesImple implements CourseServices{
 	@Transactional(readOnly = true)
 	public List<CourseDTO> getmycourse(int ownerid) {
 		List<Course>listcourse=crepo.findByownerid(ownerid);
-		System.out.println(listcourse);
 		List<CourseDTO>listdto= new ArrayList<CourseDTO>();
 		for(Course c:listcourse) {
 			CourseDTO cd=new CourseDTO();
@@ -93,5 +95,28 @@ public class CourseServicesImple implements CourseServices{
 			listCRD.add(dto);
 		}
 		return listCRD;
+	}
+
+	@Override
+	@Transactional
+	public String deleteCourse(int cid, int ownerid) {
+		Course c = crepo.findById(cid).orElse(null);
+		if (c == null) {
+			return "Course not found";
+		}
+		if (c.getOwnerid() != ownerid) {
+			return "Unauthorized: You are not the owner of this course";
+		}
+		List<Users> users = c.getUsers();
+		if (users != null) {
+			for (Users u : users) {
+				if (u.getCourse() != null) {
+					u.getCourse().removeIf(item -> item.getCid() == cid);
+					urepo.save(u);
+				}
+			}
+		}
+		crepo.delete(c);
+		return "Course deleted successfully";
 	}
 }

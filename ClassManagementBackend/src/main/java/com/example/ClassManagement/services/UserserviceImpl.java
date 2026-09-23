@@ -77,34 +77,37 @@ public class UserserviceImpl implements UserServices {
 	
 	@Override
 	public String buycourse(int cid, int uid) {
-			Users user=urepo.findById(uid).orElse(null);
-			Course course=crepo.findById(cid).orElse(null);
-			if (user == null || course == null) {
-				return "User or course not found";
-			}
-			List<Course> listcourse=user.getCourse();
-			if (listcourse == null) {
-				listcourse = new ArrayList<>();
-				user.setCourse(listcourse);
-			}
-			if (listcourse.contains(course)) {
-				return "Course already purchased";
-			}
-			listcourse.add(course);
-			urepo.save(user);
-			
-		return "usercourse";
-	}
-	@Override
-	public String deleteBuyCourse(int cid, int uid) {
-		Users user=urepo.findById(uid).orElse(null);
-		Course course=crepo.findById(cid).orElse(null);
-		if (user == null || course == null || user.getCourse() == null) {
+		Users user = urepo.findById(uid).orElse(null);
+		Course course = crepo.findById(cid).orElse(null);
+		if (user == null || course == null) {
 			return "User or course not found";
 		}
-		user.getCourse().remove(course);
+		List<Course> listcourse = user.getCourse();
+		if (listcourse == null) {
+			listcourse = new ArrayList<>();
+			user.setCourse(listcourse);
+		}
+		boolean alreadyBought = listcourse.stream().anyMatch(c -> c.getCid() == cid);
+		if (alreadyBought) {
+			return "Course already purchased";
+		}
+		listcourse.add(course);
 		urepo.save(user);
-		return "delete";
+		return "Enrolled successfully";
+	}
+
+	@Override
+	public String deleteBuyCourse(int cid, int uid) {
+		Users user = urepo.findById(uid).orElse(null);
+		if (user == null || user.getCourse() == null) {
+			return "User or courses not found";
+		}
+		boolean removed = user.getCourse().removeIf(c -> c.getCid() == cid);
+		if (!removed) {
+			return "Course not found in enrolled list";
+		}
+		urepo.save(user);
+		return "Unenrolled successfully";
 	}
 
 	private boolean isBlank(String value) {

@@ -10,4 +10,5 @@ public interface CourseServices {
 	List<CourseDTO>getmycourse(int ownerid);
 	List<CourseRespDTO>getAllCourses();
 	List<CourseRespDTO>getMyBuyCourses(int uid);
+	String deleteCourse(int cid, int ownerid);
 }

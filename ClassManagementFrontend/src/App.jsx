@@ -1,405 +1,104 @@
-import { useState } from "react";
-import {
-  register,
-  login,
-  handleloginclclick,
-  handleAddCourse,
-  handleclick,
-  handleMyCourse,
-  handlebuycourse,
-  handleDeleteBuyCourses,
-  AddCourse,
-  handleMyAddedCourses
-} from "./resigterAndLogin";
+import React, { useState } from "react";
+import Navbar from "./components/Navbar";
+import LandingPage from "./components/LandingPage";
+import AuthModal from "./components/AuthModal";
+import StudentDashboard from "./components/StudentDashboard";
+import TeacherDashboard from "./components/TeacherDashboard";
+import Toast from "./components/Toast";
+import { getStoredUser, clearStoredUser } from "./resigterAndLogin";
 import "./App.css";
 
-function App() {
-  let [loginUI, SetLoginUI] = useState("login");
-  let [loginform, setLoginForm] = useState({
-    email: "",
-    password: ""
-  });
-  let [registerUI, setRegisterUI] = useState(null);
+export default function App() {
+  // Session persistence: restore user from localStorage if exists
+  const [user, setUser] = useState(() => getStoredUser());
 
-  let [registerform, setregitserform] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: ""
+  // Views: "landing" | "dashboard" | "login" | "register"
+  const [currentView, setCurrentView] = useState(() => {
+    const savedUser = getStoredUser();
+    // As requested: if user is already logged in, navigate directly to dashboard!
+    return savedUser ? "dashboard" : "landing";
   });
 
-  let [course, setcourse] = useState({
-    cname: "",
-    ownerid: ""
-  });
-  let [role, setRole] = useState(null);
-  let [getcourse, setGetCourse] = useState([]);
-  let [current, setCurrent] = useState({});
-  let [mycourse, setMyCourse] = useState(null);
-  let [mycoursebtn, setMyCourseBtn] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
-  const [myAddedCourses, setMyAddedCourses] = useState([]);
-  const [showCourses, setShowCourses] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  // Toast notifier
+  const showToast = (message, type = "info", title = "") => {
+    const id = Date.now() + Math.random().toString(36).substring(2, 6);
+    setToasts((prev) => [...prev, { id, message, type, title }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3800);
+  };
 
-  const handleregister = (e) => {
-    register(e, registerform, setregitserform);
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   };
-  const handlelogin = (e) => {
-    login(e, loginform, setLoginForm);
+
+  // Auth Success Handler
+  const handleAuthSuccess = (authenticatedUser) => {
+    setUser(authenticatedUser);
+    setCurrentView("dashboard"); // Directly route to role dashboard!
   };
-  const handleloginclick = () => {
-    handleloginclclick(SetLoginUI, loginform, setRole, setGetCourse, setCurrent);
+
+  // Logout Handler
+  const handleLogout = () => {
+    clearStoredUser();
+    setUser(null);
+    setCurrentView("landing");
+    showToast("You have been signed out safely.", "info");
   };
-  const handleChangeCourse = (e) => {
-    AddCourse(e, course, setcourse);
-  };
-  function hidestudent(cid) {
-    if (selectedCourse === cid) {
-      setSelectedCourse(null);
-    } else {
-      setSelectedCourse(cid);
+
+  // Navigation Router
+  const handleNavigate = (view) => {
+    if (view === "dashboard" && !user) {
+      setCurrentView("login");
+      return;
     }
-  }
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div className="app-wrapper">
-      {/* LOGIN FORM */}
-      {loginUI && (
-        <div className="card-container">
-            <form className="custom-form" onSubmit={(e) => e.preventDefault()}>
-            <h2 className="form-title">Welcome Back</h2>
-            <input
-              className="custom-input"
-              type="text"
-              name="email"
-              placeholder="Enter Email"
-              onChange={handlelogin}
-            />
-            <input
-              className="custom-input"
-              type="password"
-              name="password"
-              placeholder="Enter Password"
-              onChange={handlelogin}
-            />
-            <div className="btn-group">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleloginclick}
-              >
-                login
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => (setRegisterUI("register"), SetLoginUI(null))}
-              >
-                Register
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+    <div className="app-root-layout">
+      {/* Toast Notification Container */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      {/* REGISTER FORM */}
-      {registerUI && (
-        <div className="card-container">
-          <form className="custom-form" onSubmit={(e) => e.preventDefault()}>
-            <h2 className="form-title">Create Account</h2>
-            <input
-              className="custom-input"
-              type="text"
-              name="name"
-              placeholder="Enter Name"
-              onChange={handleregister}
-            />
-            <input
-              className="custom-input"
-              type="text"
-              name="email"
-              placeholder="Enter Email"
-              onChange={handleregister}
-            />
-            <input
-              className="custom-input"
-              type="password"
-              name="password"
-              placeholder="Enter Password"
-              onChange={handleregister}
-            />
-            <select
-              className="custom-input"
-              name="role"
-              defaultValue=""
-              onChange={handleregister}
-            >
-              <option value="" disabled>Select account type</option>
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-            </select>
-            <div className="btn-group">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={() => {
-                  handleclick(registerform, setRegisterUI, SetLoginUI);
-                }}
-              >
-                Register
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => {
-                  SetLoginUI("login");
-                  setRegisterUI(null);
-                }}
-              >
-                Back to Login
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Top Navigation Bar */}
+      <Navbar
+        user={user}
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+      />
 
-      {/* DASHBOARD AREA */}
-      {role && (
-     <div className="card-container dashboard-container">
-  {role === "student" ? (
-    <div>
-      <h2 className="section-header">Available Courses</h2>
-      {getcourse.map((ele, index) => {
-        return (
-          <div
-            key={index}
-            className="course-card"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "10px 16px",
-              gap: "12px",
-              marginBottom: "12px"
-            }}
-          >
-            <span
-              className="course-title"
-              style={{ fontSize: "18px", fontWeight: "600" }}
-            >
-              {ele.cname}
-            </span>
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{
-                width: "auto",
-                padding: "5px 14px",
-                fontSize: "14px",
-                whiteSpace: "nowrap"
-              }}
-              onClick={() => {
-                handlebuycourse(ele.cid, current.uid, setMyCourse);
-              }}
-            >
-              Buy Course
-            </button>
-          </div>
-        );
-      })}
+      {/* Main View Area */}
+      <main className="main-content-area">
+        {/* LANDING PAGE */}
+        {currentView === "landing" && (
+          <LandingPage user={user} onNavigate={handleNavigate} />
+        )}
 
-      <div style={{ marginTop: "28px" }}>
-        <button
-          type="button"
-          className="btn btn-success"
-          onClick={() => {
-            handleMyCourse(setMyCourse, current.uid);
-            setMyCourseBtn(!mycoursebtn);
-          }}
-        >
-          My Courses
-        </button>
-      </div>
+        {/* AUTH SCREENS (LOGIN & REGISTER) */}
+        {(currentView === "login" || currentView === "register") && (
+          <AuthModal
+            initialMode={currentView}
+            onAuthSuccess={handleAuthSuccess}
+            onBackToHome={() => handleNavigate("landing")}
+            showToast={showToast}
+          />
+        )}
 
-      {mycourse && mycoursebtn && (
-        <div style={{ marginTop: "24px" }}>
-          <h3 className="section-header">Purchased Courses</h3>
-          {mycourse.map((ele, index) => {
-            return (
-              <div
-                key={index}
-                className="course-card"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 16px",
-                  gap: "12px",
-                  marginBottom: "12px"
-                }}
-              >
-                <span
-                  className="course-title"
-                  style={{ fontSize: "18px", fontWeight: "600" }}
-                >
-                  {ele.cname}
-                </span>
-                <button
-                  className="btn btn-danger"
-                  style={{
-                    width: "auto",
-                    padding: "5px 14px",
-                    fontSize: "14px",
-                    whiteSpace: "nowrap"
-                  }}
-                  onClick={() => {
-                    handleDeleteBuyCourses(
-                      ele.cid,
-                      current.uid,
-                      setMyCourse
-                    );
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  ) : (
-    <div>
-      <h2 className="section-header">Teacher Portal</h2>
-     {/* Teacher Portal Form */}
-<form
-  className="custom-form"
-  onSubmit={(e) => e.preventDefault()}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "24px"
-  }}
->
-  <input
-    className="custom-input"
-    type="text"
-    name="cname"
-    placeholder="Course Name"
-    value={course.cname} 
-    onChange={handleChangeCourse}
-    style={{ marginBottom: 0 }}
-  />
-  <button
-    type="button"
-    className="btn btn-success"
-    style={{
-      width: "auto",
-      whiteSpace: "nowrap",
-      padding: "10px 18px"
-    }}
-    onClick={() => handleAddCourse(course, current.uid, setcourse)} // 👈 इथे setcourse पास केला आहे
-  >
-    Add Course
-  </button>
-</form>
-
-      <button
-        className="btn btn-primary"
-        onClick={() =>
-          handleMyAddedCourses(
-            current.uid,
-            setMyAddedCourses,
-            showCourses,
-            setShowCourses
-          )
-        }
-      >
-        My Added Courses
-      </button>
-
-      {showCourses && myAddedCourses.length > 0 && (
-        <div style={{ marginTop: "24px" }}>
-          {myAddedCourses.map((ele) => (
-            <div
-              key={ele.cid}
-              className="course-card"
-              style={{ padding: "12px 16px", marginBottom: "12px" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  width: "100%",
-                  alignItems: "center"
-                }}
-              >
-                <span
-                  className="course-title"
-                  style={{ fontSize: "18px", fontWeight: "600" }}
-                >
-                  {ele.cname}
-                </span>
-                <button
-                  className="btn btn-outline"
-                  style={{
-                    width: "auto",
-                    padding: "5px 14px",
-                    fontSize: "14px",
-                    whiteSpace: "nowrap"
-                  }}
-                  onClick={() => hidestudent(ele.cid)}
-                >
-                  {selectedCourse === ele.cid
-                    ? "Hide Students"
-                    : "Show Students"}
-                </button>
-              </div>
-
-              {selectedCourse === ele.cid && (
-                <div
-                  className="student-box"
-                  style={{
-                    width: "100%",
-                    marginTop: "12px",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                    alignItems: "center"
-                  }}
-                >
-                  {!ele.userRespDTO || ele.userRespDTO.length === 0 ? (
-                    <span className="empty-msg">No enrolled students</span>
-                  ) : (
-                    ele.userRespDTO.map((stud, index) => (
-                      <span
-                        key={index}
-                        className="student-name"
-                        style={{
-                          backgroundColor: "#f0f2f5",
-                          padding: "4px 10px",
-                          borderRadius: "4px",
-                          fontSize: "14px"
-                        }}
-                      >
-                        {stud.name}
-                      </span>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )}
-</div>
-      )}
+        {/* ROLE-BASED DASHBOARD */}
+        {currentView === "dashboard" && user && (
+          <>
+            {user.role === "teacher" ? (
+              <TeacherDashboard user={user} showToast={showToast} />
+            ) : (
+              <StudentDashboard user={user} showToast={showToast} />
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }
-
-export default App;
