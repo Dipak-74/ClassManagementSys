@@ -4,6 +4,8 @@ public class CourseRespDTO {
 	int cid;
 	String cname;
 	int ownerid;
+	String teacherName;
+
 	public int getCid() {
 		return cid;
 	}
@@ -22,5 +24,10 @@ public class CourseRespDTO {
 	public void setOwnerid(int ownerid) {
 		this.ownerid = ownerid;
 	}
-	
+	public String getTeacherName() {
+		return teacherName;
+	}
+	public void setTeacherName(String teacherName) {
+		this.teacherName = teacherName;
+	}
 }

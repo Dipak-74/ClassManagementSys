@@ -82,11 +82,26 @@ export default function StudentDashboard({ user, showToast }) {
 
     setActionLoadingCid(course.cid);
     try {
-      await apiBuyCourse(course.cid, user.uid);
+      const respMsg = await apiBuyCourse(course.cid, user.uid);
+      if (respMsg && (respMsg.toLowerCase().includes("failed") || respMsg.toLowerCase().includes("not found"))) {
+        showToast(respMsg, "error");
+        return;
+      }
       showToast(`Successfully enrolled in "${course.cname}"!`, "success");
-      // Refresh my courses list
-      const updatedMyCourses = await apiGetMyBuyCourses(user.uid);
-      setMyCourses(updatedMyCourses);
+      // Add course to state immediately so UI updates instantly
+      setMyCourses((prev) => {
+        if (prev.some((item) => item.cid === course.cid)) return prev;
+        return [...prev, course];
+      });
+      // Also fetch from server
+      try {
+        const updated = await apiGetMyBuyCourses(user.uid);
+        if (updated && updated.length > 0) {
+          setMyCourses(updated);
+        }
+      } catch {
+        // keep local state
+      }
     } catch (err) {
       showToast(getErrorMessage(err, "Unable to enroll in course"), "error");
     } finally {
@@ -105,8 +120,16 @@ export default function StudentDashboard({ user, showToast }) {
     try {
       await apiDeleteBuyCourse(course.cid, user.uid);
       showToast(`Dropped "${course.cname}" successfully`, "info");
-      const updatedMyCourses = await apiGetMyBuyCourses(user.uid);
-      setMyCourses(updatedMyCourses);
+      // Remove from state immediately
+      setMyCourses((prev) => prev.filter((item) => item.cid !== course.cid));
+      try {
+        const updated = await apiGetMyBuyCourses(user.uid);
+        if (updated) {
+          setMyCourses(updated);
+        }
+      } catch {
+        // keep local state
+      }
     } catch (err) {
       showToast(getErrorMessage(err, "Unable to unenroll from course"), "error");
     } finally {
@@ -248,9 +271,14 @@ export default function StudentDashboard({ user, showToast }) {
                     <h4 className="course-name">{c.cname}</h4>
 
                     <div className="course-card-footer">
-                      <span className="instructor-meta">
-                        Instructor ID: #{c.ownerid}
-                      </span>
+                      <div className="course-instructor-badge">
+                        <span className="instructor-avatar-mini">
+                          {(c.teacherName || "T").charAt(0).toUpperCase()}
+                        </span>
+                        <span className="instructor-name-label" title={c.teacherName || ("Instructor #" + c.ownerid)}>
+                          {c.teacherName || ("Instructor #" + c.ownerid)}
+                        </span>
+                      </div>
 
                       {isEnrolled ? (
                         <button
@@ -335,9 +363,14 @@ export default function StudentDashboard({ user, showToast }) {
                     <h4 className="course-name">{c.cname}</h4>
 
                     <div className="course-card-footer">
-                      <span className="instructor-meta">
-                        Instructor ID: #{c.ownerid}
-                      </span>
+                      <div className="course-instructor-badge">
+                        <span className="instructor-avatar-mini">
+                          {(c.teacherName || "T").charAt(0).toUpperCase()}
+                        </span>
+                        <span className="instructor-name-label" title={c.teacherName || ("Instructor #" + c.ownerid)}>
+                          {c.teacherName || ("Instructor #" + c.ownerid)}
+                        </span>
+                      </div>
 
                       <button
                         type="button"

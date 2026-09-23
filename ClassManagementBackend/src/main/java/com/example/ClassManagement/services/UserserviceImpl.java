@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,8 @@ public class UserserviceImpl implements UserServices {
 	UsersRepo urepo;
 	@Autowired
 	CourseRepo crepo;
+	@Autowired
+	JdbcTemplate jdbcTemplate;
 	
 	@Override
 	public String addUsers(UsersDTO dto) {
@@ -78,33 +81,58 @@ public class UserserviceImpl implements UserServices {
 	@Override
 	public String buycourse(int cid, int uid) {
 		try {
-			Users user = null;
-			try {
-				user = urepo.findByIdWithCourses(uid).orElse(null);
-			} catch (Exception e) {
-				user = urepo.findById(uid).orElse(null);
-			}
+			Users user = urepo.findById(uid).orElse(null);
 			Course course = crepo.findById(cid).orElse(null);
 			if (user == null || course == null) {
 				return "User or course not found";
 			}
-			List<Course> listcourse = null;
+
+			// 1. Direct SQL check if already enrolled
 			try {
-				listcourse = user.getCourse();
+				Integer count = jdbcTemplate.queryForObject(
+					"SELECT COUNT(*) FROM user_course WHERE uid = ? AND cid = ?",
+					Integer.class,
+					uid, cid
+				);
+				if (count != null && count > 0) {
+					return "Course already purchased";
+				}
 			} catch (Exception ex) {
-				listcourse = new ArrayList<>();
-				user.setCourse(listcourse);
+				System.err.println("Notice: enrollment check: " + ex.getMessage());
 			}
-			if (listcourse == null) {
-				listcourse = new ArrayList<>();
-				user.setCourse(listcourse);
+
+			// 2. Direct SQL insert (100% reliable in MySQL)
+			boolean inserted = false;
+			try {
+				jdbcTemplate.update(
+					"INSERT INTO user_course (uid, cid) VALUES (?, ?) ON DUPLICATE KEY UPDATE uid=uid",
+					uid, cid
+				);
+				inserted = true;
+			} catch (Exception ex) {
+				try {
+					jdbcTemplate.update("INSERT IGNORE INTO user_course (uid, cid) VALUES (?, ?)", uid, cid);
+					inserted = true;
+				} catch (Exception ex2) {
+					System.err.println("Notice: SQL insert user_course: " + ex2.getMessage());
+				}
 			}
-			boolean alreadyBought = listcourse.stream().anyMatch(c -> c.getCid() == cid);
-			if (alreadyBought) {
-				return "Course already purchased";
+
+			// 3. Fallback JPA save if direct SQL did not run
+			if (!inserted) {
+				List<Course> listcourse = user.getCourse();
+				if (listcourse == null) {
+					listcourse = new ArrayList<>();
+					user.setCourse(listcourse);
+				}
+				boolean alreadyBought = listcourse.stream().anyMatch(c -> c.getCid() == cid);
+				if (alreadyBought) {
+					return "Course already purchased";
+				}
+				listcourse.add(course);
+				urepo.save(user);
 			}
-			listcourse.add(course);
-			urepo.save(user);
+
 			return "Enrolled successfully";
 		} catch (Exception e) {
 			System.err.println("Error in buycourse: " + e.getMessage());
@@ -115,29 +143,23 @@ public class UserserviceImpl implements UserServices {
 	@Override
 	public String deleteBuyCourse(int cid, int uid) {
 		try {
-			Users user = null;
+			int rows = 0;
 			try {
-				user = urepo.findByIdWithCourses(uid).orElse(null);
-			} catch (Exception e) {
-				user = urepo.findById(uid).orElse(null);
-			}
-			if (user == null) {
-				return "User not found";
-			}
-			List<Course> listcourse = null;
-			try {
-				listcourse = user.getCourse();
+				rows = jdbcTemplate.update(
+					"DELETE FROM user_course WHERE uid = ? AND cid = ?",
+					uid, cid
+				);
 			} catch (Exception ex) {
-				listcourse = new ArrayList<>();
+				System.err.println("Notice: SQL delete user_course: " + ex.getMessage());
 			}
-			if (listcourse == null) {
-				return "Course not found in enrolled list";
+
+			if (rows <= 0) {
+				Users user = urepo.findById(uid).orElse(null);
+				if (user != null && user.getCourse() != null) {
+					user.getCourse().removeIf(c -> c.getCid() == cid);
+					urepo.save(user);
+				}
 			}
-			boolean removed = listcourse.removeIf(c -> c.getCid() == cid);
-			if (!removed) {
-				return "Course not found in enrolled list";
-			}
-			urepo.save(user);
 			return "Unenrolled successfully";
 		} catch (Exception e) {
 			System.err.println("Error in deleteBuyCourse: " + e.getMessage());

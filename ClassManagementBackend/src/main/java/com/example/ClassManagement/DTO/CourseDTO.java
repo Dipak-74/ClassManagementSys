@@ -2,13 +2,12 @@ package com.example.ClassManagement.DTO;
 
 import java.util.List;
 
-
-
 public class CourseDTO{
 
 		int  cid;
 		String cname;
 		int ownerid;
+		String teacherName;
 		List<UserRespDTO>userRespDTO;
 		public int getCid() {
 			return cid;
@@ -27,6 +26,12 @@ public class CourseDTO{
 		}
 		public void setOwnerid(int ownerid) {
 			this.ownerid = ownerid;
+		}
+		public String getTeacherName() {
+			return teacherName;
+		}
+		public void setTeacherName(String teacherName) {
+			this.teacherName = teacherName;
 		}
 		public List<UserRespDTO> getUserRespDTO() {
 			return userRespDTO;

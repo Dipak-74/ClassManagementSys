@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import {
   apiGetTeacherCourses,
+  apiGetAllCourses,
   apiAddCourse,
   apiDeleteTeacherCourse,
   getErrorMessage
