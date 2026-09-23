@@ -30,14 +30,22 @@ export default function StudentDashboard({ user, showToast }) {
     if (!user?.uid) return;
     setLoadingCourses(true);
     try {
-      const [allList, myList] = await Promise.all([
-        apiGetAllCourses(),
-        apiGetMyBuyCourses(user.uid)
-      ]);
-      setAllCourses(allList);
-      setMyCourses(myList);
-    } catch (err) {
-      showToast(getErrorMessage(err, "Failed to load courses"), "error");
+      // 1. Fetch available courses
+      try {
+        const allList = await apiGetAllCourses();
+        setAllCourses(allList || []);
+      } catch (err) {
+        console.error("Failed to load all courses:", err);
+      }
+
+      // 2. Fetch student enrolled courses independently
+      try {
+        const myList = await apiGetMyBuyCourses(user.uid);
+        setMyCourses(myList || []);
+      } catch (err) {
+        console.warn("Failed to load enrolled courses:", err);
+        setMyCourses([]);
+      }
     } finally {
       setLoadingCourses(false);
     }

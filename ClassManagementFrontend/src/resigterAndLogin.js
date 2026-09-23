@@ -120,8 +120,13 @@ export async function apiRegister(name, email, password, role) {
 }
 
 export async function apiGetAllCourses() {
-  const res = await axios.get(`${getBaseUrl()}/course/getallcourse`, { timeout: 25000 });
-  return Array.isArray(res.data) ? res.data : [];
+  try {
+    const res = await axios.get(`${getBaseUrl()}/course/getallcourse`, { timeout: 25000 });
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    console.error("apiGetAllCourses error:", err);
+    return [];
+  }
 }
 
 export async function apiGetMyBuyCourses(uid) {

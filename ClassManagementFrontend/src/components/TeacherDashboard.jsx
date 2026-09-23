@@ -37,9 +37,16 @@ export default function TeacherDashboard({ user, showToast }) {
     setLoading(true);
     try {
       const list = await apiGetTeacherCourses(user.uid);
-      setCourses(list);
+      setCourses(list || []);
     } catch (err) {
-      showToast(getErrorMessage(err, "Failed to load instructor courses"), "error");
+      console.warn("Failed to load instructor courses:", err);
+      try {
+        const all = await apiGetAllCourses();
+        const filtered = (all || []).filter((c) => Number(c.ownerid) === Number(user.uid));
+        setCourses(filtered);
+      } catch {
+        setCourses([]);
+      }
     } finally {
       setLoading(false);
     }
